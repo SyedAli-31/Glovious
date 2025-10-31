@@ -24,10 +24,10 @@ type Product = {
 };
 
 const productImages: Record<string, string> = {
-    "mech-1": "/Mech1.png",
-    "mech-2": "/Mech2.png",
-    "asm-1": "/Asm1.png",
-    "asm-2": "/Asm2.png",
+    "mech-1": "/mech1.png",
+    "mech-2": "/mech2.png",
+    "asm-1": "/asm1.png",
+    "asm-2": "/asm2.png",
     "weld-1": "/Stickwelding1.png",
     "weld-2": "/Stickwelding2.png",
     "imp-1": "/Impact1.png",

@@ -1,5 +1,5 @@
 // lib/sampleData.ts
-import { Category, Product, BlogPost, HeroSlide } from './data';
+import { Category, Product,  HeroSlide } from './data';
 
 // Hero carousel slides
 export const heroSlides: HeroSlide[] = [
@@ -859,30 +859,39 @@ export const products: Product[] = [
     }
 ];
 
-// Blog posts
+// Blog Post Type Definition
+export interface BlogPost {
+    id: number;
+    title: string;
+    slug: string;
+    excerpt: string;
+    image: string;
+    date: string;
+}
+
 export const blogPosts: BlogPost[] = [
     {
-        id: '1',
-        title: 'Essential Safety Guidelines for Industrial Glove Selection',
-        slug: 'safety-guidelines-industrial-glove-selection',
-        excerpt: 'Learn how to choose the right protective gloves for your specific industrial application to ensure maximum safety and compliance.',
-        image: 'blog1',
-        date: '2024-10-15'
+        id: 1,
+        title: "Safety Guidelines for Industrial Glove Selection",
+        slug: "safety-guidelines-industrial-glove-selection",
+        excerpt: "Learn how to select the right protective gloves for your specific industrial applications and ensure maximum safety compliance.",
+        image: "/blog1.jpg",
+        date: "2024-01-15"
     },
     {
-        id: '2',
-        title: 'Heat-Resistant Gloves: Why Quality Matters in Welding Operations',
-        slug: 'heat-resistant-gloves-welding-quality',
-        excerpt: 'Discover the critical factors that make premium welding gloves essential for protecting workers in high-temperature environments.',
-        image: 'blog2',
-        date: '2024-10-10'
+        id: 2,
+        title: "Heat Resistant Gloves in Welding: Why Quality Matters",
+        slug: "heat-resistant-gloves-welding-quality",
+        excerpt: "Discover the importance of quality heat-resistant gloves in welding operations and how they protect workers from extreme temperatures.",
+        image: "/blog2.png",
+        date: "2024-01-10"
     },
     {
-        id: '3',
-        title: 'Maximizing Worker Safety with Cut-Resistant Gloves',
-        slug: 'maximizing-safety-cut-resistant-gloves',
-        excerpt: 'Explore the latest innovations in cut-resistant technology and how to implement effective hand protection programs.',
-        image: 'blog3',
-        date: '2024-10-05'
+        id: 3,
+        title: "Maximizing Safety with Cut-Resistant Gloves",
+        slug: "maximizing-safety-cut-resistant-gloves",
+        excerpt: "Explore the latest innovations in cut-resistant glove technology and how they're revolutionizing workplace safety standards.",
+        image: "/blog3.jpg",
+        date: "2024-01-05"
     }
 ];

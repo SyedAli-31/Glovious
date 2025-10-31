@@ -1,19 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Phone, Mail, Menu, X, ChevronDown } from "lucide-react";
+import { Phone, Mail, Menu, X, ChevronDown, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { categories } from "../../shared/mockData";
 import type { Category } from "../../shared/data";
+import { usePathname } from "next/navigation"; // 👈 detect route changes
+ 
+
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
-
+    const [ , setProductsDropdownOpen] = useState(false);
+    const [productsOpen, setProductsOpen] = useState<boolean>(false);
+    const pathname = usePathname();
+    const [isOpen, setIsOpen] = useState(false);
     const catList = categories as Category[];
 
+    // 👇 Whenever route changes → close dropdown & mobile menu
+    useEffect(() => {
+        setProductsOpen(false); // close mobile dropdown
+        setMobileMenuOpen(false); // close mobile menu
+        setProductsDropdownOpen(false); // close desktop dropdown
+    }, [pathname]);
+
+    const toggleMobileMenu = () => {
+        setMobileMenuOpen((prev) => !prev);
+    };
+
+    const toggleProductsMenu = () => {
+        setProductsOpen((prev) => !prev);
+    };
+    const handleWhatsAppClick = () => {
+        const message = encodeURIComponent(
+            `Hello! I'm interested in the . Can you provide more information?`
+        );
+        const phoneNumber = "923142238189";
+        window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+    };
     return (
         <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
             {/* Top Contact Strip */}
@@ -21,22 +47,20 @@ export default function Header() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between py-2 text-sm">
                         <div className="flex items-center gap-6">
-                            <a
+                            <Link
                                 href="mailto:info@glovios.com"
                                 className="flex items-center gap-2 hover:opacity-80 transition-opacity px-2 py-1 rounded"
-                                data-testid="link-email"
                             >
                                 <Mail className="h-4 w-4" />
                                 <span className="hidden sm:inline">info@glovios.com</span>
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                                 href="tel:+18001234567"
                                 className="flex items-center gap-2 hover:opacity-80 transition-opacity px-2 py-1 rounded"
-                                data-testid="link-phone"
                             >
                                 <Phone className="h-4 w-4" />
                                 <span className="hidden sm:inline">+1 (800) 123-4567</span>
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -45,83 +69,80 @@ export default function Header() {
             {/* Main Navigation */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
-                    <Link href="/" data-testid="link-home">
-                        <div className="text-2xl font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
-                            GLOVIOS
-                        </div>
+                    <Link href="/" className="text-2xl font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
+                        GLOVIOS
                     </Link>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-1">
-                        <Link href="/" data-testid="nav-home">
-                            <Button variant="ghost" className="hover:scale-105 transition-transform">
+                        <Link href="/">
+                            <Button variant="ghost" className="hover:scale-105 hover:text-red-600 transition-transform">
                                 Home
                             </Button>
                         </Link>
 
-                        <Link href="/who-we-are" data-testid="nav-about">
-                            <Button variant="ghost" className="hover:scale-105 transition-transform">
+                        <Link href="/who-we-are">
+                            <Button variant="ghost" className="hover:scale-105 hover:text-red-600 transition-transform">
                                 Who We Are
                             </Button>
                         </Link>
 
                         {/* Products Dropdown */}
+                        {/* Products Dropdown */}
                         <div
                             className="relative"
-                            onMouseEnter={() => setProductsDropdownOpen(true)}
-                            onMouseLeave={() => setProductsDropdownOpen(false)}
+                            onMouseEnter={() => setIsOpen(true)}
+                            onMouseLeave={() => setIsOpen(false)}
                         >
+                            {/* Dropdown Trigger */}
                             <Button
                                 variant="ghost"
-                                className="hover:scale-105 transition-transform"
-                                data-testid="nav-products"
-                                aria-haspopup="menu"
-                                aria-expanded={productsDropdownOpen}
+                                className="flex items-center gap-1 hover:text-red-600 transition-colors"
                             >
-                                Our Products <ChevronDown className="ml-1 h-4 w-4" />
+                                Our Products
+                                <ChevronDown
+                                    className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180 text-red-600" : ""
+                                        }`}
+                                />
                             </Button>
 
-                            {productsDropdownOpen && (
-                                <div className="absolute top-full left-0 mt-1 w-80 bg-popover border rounded-lg shadow-lg p-4 grid grid-cols-2 gap-2 animate-in fade-in-0 zoom-in-95 duration-200">
-                                    {catList.map((category) => (
-                                        <Link
-                                            key={category.id}
-                                            href={`/products/${category.slug}`}
-                                            data-testid={`dropdown-${category.slug}`}
-                                        >
-                                            <div className="text-sm p-2 hover:bg-accent hover:scale-105 transition-all rounded cursor-pointer">
-                                                {category.name}
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
+                            {/* Dropdown Menu */}
+                            <div
+                                className={`absolute top-full left-0 mt-2 w-80 bg-popover border rounded-lg shadow-lg p-4 grid grid-cols-2 gap-2 z-50 transform transition-all duration-200 ease-out ${isOpen
+                                        ? "opacity-100 visible translate-y-0"
+                                        : "opacity-0 invisible -translate-y-2"
+                                    }`}
+                            >
+                                {catList.map((category) => (
+                                    <Link key={category.id} href={`/products/${category.slug}`}>
+                                        <div className="text-sm p-2 hover:bg-red-600 hover:text-white rounded-lg transition-all hover:scale-105">
+                                            {category.name}
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
 
-                        
 
-                        <Link href="/blog" data-testid="nav-blog">
-                            <Button variant="ghost" className="hover:scale-105 transition-transform">
+                        <Link href="/blog">
+                            <Button variant="ghost" className="hover:scale-105 hover:text-red-600 transition-transform">
                                 Blog
                             </Button>
                         </Link>
 
-                        
-
-                        <Link href="/contact" data-testid="nav-contact">
-                            <Button variant="ghost" className="hover:scale-105 transition-transform">
+                        <Link href="/contact">
+                            <Button variant="ghost" className="hover:scale-105 hover:text-red-600 transition-transform">
                                 Contact Us
                             </Button>
                         </Link>
                     </nav>
 
+                    {/* Theme + Quote + Mobile Menu */}
                     <div className="flex items-center gap-2">
                         <ThemeToggle />
 
-                        <Link href="/get-quote" data-testid="button-get-quote">
-                            <Button className="hidden md:inline-flex" data-testid="button-quote-desktop">
-                                Get Quote
-                            </Button>
+                        <Link href="/get-quote">
+                            <Button className="hidden md:inline-flex">Get Quote</Button>
                         </Link>
 
                         {/* Mobile Menu Button */}
@@ -129,11 +150,8 @@ export default function Header() {
                             variant="ghost"
                             size="icon"
                             className="md:hidden"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            onClick={toggleMobileMenu}
                             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                            aria-expanded={mobileMenuOpen}
-                            aria-controls="mobile-menu"
-                            data-testid="button-mobile-menu"
                         >
                             {mobileMenuOpen ? <X /> : <Menu />}
                         </Button>
@@ -143,97 +161,88 @@ export default function Header() {
 
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div id="mobile-menu" className="md:hidden border-t bg-background animate-in slide-in-from-top-5 duration-300">
-                    <nav className="px-4 py-4 space-y-2">
-                        <Link href="/" data-testid="mobile-nav-home">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start hover:bg-accent transition-colors"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                Home
-                            </Button>
-                        </Link>
-
-                        <Link href="/who-we-are" data-testid="mobile-nav-about">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start hover:bg-accent transition-colors"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                Who We Are
-                            </Button>
-                        </Link>
-
-                        <div className="pl-4 space-y-1">
-                            <div className="text-sm font-semibold text-muted-foreground py-2">
-                                Our Products
-                            </div>
-                            {catList.map((category) => (
-                                <Link
-                                    key={category.id}
-                                    href={`/products/${category.slug}`}
-                                    data-testid={`mobile-dropdown-${category.slug}`}
+                <div
+                    id="mobile-menu"
+                    className="md:hidden border-t  bg-background animate-in slide-in-from-top-5 duration-300 shadow-lg"
+                >
+                    <nav className="px-4 py-4 space-y-2 ">
+                        {/* Main Links */}
+                        {[
+                            { href: "/", label: "Home" },
+                            { href: "/who-we-are", label: "Who We Are" },
+                          
+                            { href: "/blog", label: "Blog" },
+                          
+                            { href: "/contact", label: "Contact Us" },
+                        ].map((link) => (
+                            <Link key={link.href} href={link.href}>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start  hover:text-red-600 text-base font-medium rounded-xl transition-all duration-300"
+                                    onClick={() => setMobileMenuOpen(false)}
                                 >
-                                    <Button
-                                        variant="ghost"
-                                        className="w-full justify-start text-sm hover:bg-accent transition-colors"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                    >
-                                        {category.name}
-                                    </Button>
-                                </Link>
-                            ))}
+                                    {link.label}
+                                </Button>
+                            </Link>
+                        ))}
+
+                        {/* Our Products Dropdown */}
+                        <div className=" border-border ">
+                            <button
+                                onClick={toggleProductsMenu}
+                                className="w-full flex items-center gap-2 text-base font-semibold text-foreground hover:text-red-600 transition-colors"
+                            >
+                                <span>Our Products</span>
+                                <ChevronDown
+                                    className={`h-5 w-5 transform transition-transform duration-300 ${productsOpen ? "rotate-180 text-red-600" : "rotate-0 text-muted-foreground"
+                                        }`}
+                                />
+                            </button>
+
+                            <div
+                                className={`overflow-hidden transition-all duration-500 ${productsOpen ? "max-h-96 opacity-100 mt-3" : "max-h-0 opacity-0"
+                                    }`}
+                            >
+                                <ul className="pl-3 space-y-1">
+                                    {catList.map((category) => (
+                                        <li key={category.id}>
+                                            <Link href={`/products/${category.slug}`}>
+                                                <Button
+                                                    variant="ghost"
+                                                    className="w-full justify-start text-sm text-muted-foreground hover:text-white hover:bg-red-600 rounded-lg transition-all duration-300"
+                                                    onClick={() => setMobileMenuOpen(false)}
+                                                >
+                                                    {category.name}
+                                                </Button>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
 
-                        <Link href="/careers" data-testid="mobile-nav-careers">
+                        {/* CTA */}
+                        <Link
+                            href="/contact"
+                            className="w-full mt-4 block"
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
                             <Button
-                                variant="ghost"
-                                className="w-full justify-start hover:bg-accent transition-colors"
-                                onClick={() => setMobileMenuOpen(false)}
+                                asChild
+                                className="w-full bg-red-600 hover:bg-red-700 text-white text-base font-semibold rounded-xl shadow-md transition-all duration-300"
                             >
-                                Careers
+                                <span>Get Quote</span>
                             </Button>
                         </Link>
-
-                        <Link href="/blog" data-testid="mobile-nav-blog">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start hover:bg-accent transition-colors"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                Blog
-                            </Button>
-                        </Link>
-
-                        <Link href="/catalog" data-testid="mobile-nav-catalog">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start hover:bg-accent transition-colors"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                Catalog
-                            </Button>
-                        </Link>
-
-                        <Link href="/contact" data-testid="mobile-nav-contact">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start hover:bg-accent transition-colors"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                Contact Us
-                            </Button>
-                        </Link>
-
-                        <Link href="/get-quote" data-testid="mobile-nav-quote">
-                            <Button
-                                className="w-full"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                Get Quote
-                            </Button>
-                        </Link>
+                        <Button
+                            size="lg"
+                            variant="outline"
+                            className="w-full bg-green-500"
+                            onClick={handleWhatsAppClick}
+                        >
+                            <MessageCircle className="h-5 w-5 mr-2 " />
+                            Quick Inquiry via WhatsApp
+                        </Button>
                     </nav>
                 </div>
             )}

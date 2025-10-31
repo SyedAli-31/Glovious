@@ -1,17 +1,16 @@
-
-
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { categories, products } from "@shared/mockData";
 
 const productImages: Record<string, string> = {
-    "mech-1": "/Mech1.png",
-    "mech-2": "/Mech2.png",
-    "asm-1": "/Asm1.png",
-    "asm-2": "/Asm2.png",
+    "mech-1": "/mech1.png",
+    "mech-2": "/mech2.png",
+    "asm-1": "/asm1.png",
+    "asm-2": "/asm2.png",
     "weld-1": "/Stickwelding1.png",
     "weld-2": "/Stickwelding2.png",
     "imp-1": "/Impact1.png",
@@ -43,9 +42,108 @@ interface CategoryPageProps {
     }>;
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-    const { categorySlug } = await params; // ✅ FIXED LINE
+// Loading Component
+function CategoryPageLoading() {
+    return (
+        <div className="min-h-screen">
+            {/* Hero Skeleton with Shimmer */}
+            <section className="relative h-80 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/5 to-primary/20 animate-shimmer" />
+                <div className="absolute inset-0 flex items-center">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                        <div className="h-10 w-32 bg-white/10 rounded-lg mb-4 animate-pulse" />
+                        <div className="h-12 w-96 bg-white/20 rounded-lg mb-4 animate-pulse" />
+                        <div className="h-6 w-full max-w-2xl bg-white/10 rounded-lg animate-pulse" />
+                    </div>
+                </div>
+            </section>
 
+            {/* Glovious Loading Animation */}
+            <section className="py-16 bg-background">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-8">
+                        {/* Animated Logo/Brand */}
+                        <div className="relative">
+                            <div className="text-6xl md:text-7xl font-bold text-primary animate-pulse-glow">
+                                GLOVIOUS
+                            </div>
+                            <div className="absolute -inset-4 bg-primary/20 blur-2xl rounded-full animate-blob" />
+                        </div>
+
+                        {/* Animated Glove Icons */}
+                        <div className="flex space-x-4">
+                            {[0, 1, 2].map((i) => (
+                                <div
+                                    key={i}
+                                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 animate-bounce-stagger shadow-lg shadow-primary/50"
+                                    style={{
+                                        animationDelay: `${i * 0.2}s`,
+                                    }}
+                                >
+                                    <div className="w-full h-full flex items-center justify-center text-2xl">
+                                        🧤
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Loading Text */}
+                        <div className="text-center space-y-2">
+                            <p className="text-xl font-semibold text-foreground animate-pulse">
+                                Loading Premium Protection...
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Preparing the best gloves for you
+                            </p>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-64 h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary animate-progress" />
+                        </div>
+
+                        {/* Animated Features */}
+                        <div className="grid grid-cols-3 gap-4 mt-8">
+                            {['Durable', 'Certified', 'Professional'].map((text, i) => (
+                                <div
+                                    key={text}
+                                    className="text-center p-4 rounded-lg bg-muted/50 animate-fade-in"
+                                    style={{
+                                        animationDelay: `${i * 0.3}s`,
+                                    }}
+                                >
+                                    <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-primary/20 animate-pulse" />
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        {text}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Skeleton */}
+            <section className="py-16 bg-muted/30">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="h-10 w-96 bg-muted rounded-lg mx-auto mb-8 animate-pulse" />
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="text-center">
+                                <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 animate-pulse" />
+                                <div className="h-6 w-32 bg-muted rounded mx-auto mb-2 animate-pulse" />
+                                <div className="h-4 w-full bg-muted rounded animate-pulse" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+}
+
+// Category Content Component
+async function CategoryContent({ categorySlug }: { categorySlug: string }) {
     const category = categories.find((c) => c.slug === categorySlug);
     const categoryProducts = products.filter((p) => p.categorySlug === categorySlug);
 
@@ -179,5 +277,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 </div>
             </section>
         </div>
+    );
+}
+
+// Main Page Component with Suspense
+export default async function CategoryPage({ params }: CategoryPageProps) {
+    const { categorySlug } = await params;
+
+    return (
+        <Suspense fallback={<CategoryPageLoading />}>
+            <CategoryContent categorySlug={categorySlug} />
+        </Suspense>
     );
 }

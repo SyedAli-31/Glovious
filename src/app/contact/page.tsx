@@ -2,7 +2,8 @@
 
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import Image from "next/image";
-
+import { useToast } from "@/hooks/use-toast";
+import { useInView } from "react-intersection-observer";
 import {
     Mail,
     Phone,
@@ -21,64 +22,120 @@ interface ContactFormData {
     email: string;
     subject: string;
     message: string;
+    order: string;
 }
 
 export default function ContactPage(): React.ReactElement {
-    const [form, setForm] = useState<ContactFormData>({
+    const [formData, setFormData] = useState<ContactFormData>({
+        
         firstName: "",
         lastName: "",
         phone: "",
         email: "",
         subject: "",
         message: "",
+        order: "",
     });
     const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
-    const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess] = useState<string | null>(null);
+ 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+        const { ref,  } = useInView({
+            triggerOnce: true,
+            threshold: 0.1,
+        });
 
-    const handleChange = (
-        e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ): void => {
-        const { name, value } = e.target;
-        setForm((prev) => ({ ...prev, [name]: value }));
-        setErrors((prev) => ({ ...prev, [name]: undefined }));
-        setSuccess(null);
-    };
+   const handleChange = (
+           e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+       ): void => {
+           const { name, value } = e.target;
+           setFormData((prev) => ({ ...prev, [name]: value }));
+       };
 
     const validate = (): boolean => {
         const newErrors: typeof errors = {};
-        if (!form.firstName.trim()) newErrors.firstName = "First name is required";
-        if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
-        if (!form.phone.trim()) newErrors.phone = "Phone number is required";
-        if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email))
+        if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+        if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+        if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+        if (!formData.email.trim() || !/^\S+@\S+\.\S+$/.test(formData.email))
             newErrors.email = "Valid email required";
-        if (!form.subject.trim()) newErrors.subject = "Subject is required";
-        if (!form.message.trim()) newErrors.message = "Message is required";
+        if (!formData.subject.trim()) newErrors.subject = "Subject is required";
+        if (!formData.message.trim()) newErrors.message = "Message is required";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-        e.preventDefault();
-        if (!validate()) return;
-        setSubmitting(true);
-        setSuccess(null);
+     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+            e.preventDefault();
+            setIsSubmitting(true);
+    
+            try {
+                const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
+    
+                if (!accessKey) {
+                    console.error("❌ Web3Forms Access Key not found in .env.local");
+                    toast({
+                        title: "⚠️ Configuration Error",
+                        description: "Missing Web3Forms Access Key. Please try again later.",
+                        variant: "destructive",
+                        className: "bg-red-600 text-white border-none shadow-lg rounded-xl",
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+    
+                const form = new FormData();
+                form.append("access_key", accessKey);
+                form.append("subject", "New Contact Form Submission");
+                form.append("from_name", "Glovious New Quote");
+    
+                Object.entries(formData).forEach(([key, value]) => {
+                    form.append(key, value);
+                });
+    
+                const response = await fetch("https://api.web3forms.com/submit", {
+                    method: "POST",
+                    body: form,
+                });
+    
+                const data = await response.json();
+    
+                if (data.success) {
+                    toast({
+                        title: "✅ Message Sent!",
+                        description: "Thank you for reaching out. We'll get back to you shortly.",
+                        className: "bg-purple-900 text-white border-none shadow-lg rounded-xl",
+                    });
+                    setFormData({
+                        firstName: "",
+                        lastName: "",
+                        phone: "",
+                        email: "",
+                        subject: "",
+                        message: "",
+                        order: "",
+                    });
 
-        // Simulate sending request
-        await new Promise((resolve) => setTimeout(resolve, 900));
-
-        setSubmitting(false);
-        setSuccess("Thank you — your message has been sent!");
-        setForm({
-            firstName: "",
-            lastName: "",
-            phone: "",
-            email: "",
-            subject: "",
-            message: "",
-        });
-    };
-
+                } else {
+                    toast({
+                        title: "⚠️ Submission Failed",
+                        description: "Please try again or contact us via email.",
+                        variant: "destructive",
+                        className: "bg-red-600 text-white border-none shadow-lg rounded-xl",
+                    });
+                }
+            } catch (error) {
+                console.error("🚫 Error submitting form:", error);
+                toast({
+                    title: "🚫 Error",
+                    description: "Something went wrong. Please try again later.",
+                    variant: "destructive",
+                    className: "bg-red-600 text-white border-none shadow-lg rounded-xl",
+                });
+            } finally {
+                setIsSubmitting(false);
+            }
+        };
     return (
         <main className="min-h-screen bg-gray-50">
             {/* HERO SECTION */}
@@ -115,44 +172,25 @@ export default function ContactPage(): React.ReactElement {
                         <aside className="md:w-1/2 p-8 md:p-12 bg-gray-50">
                             <h2 className="text-2xl font-bold mb-4">Get in Touch</h2>
                             <p className="text-sm text-gray-600 mb-6">
-                                We'd love to hear from you! Fill out the form or use the details
-                                below — our team will get back to you shortly.
+                                We'd love to hear from you! Fill out the form or use the details below — our team will get back to you shortly.
                             </p>
 
                             <div className="space-y-5">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 rounded-full bg-red-600 text-white">
-                                        <Mail className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-semibold">
-                                            info@noorsonss.com
-                                        </div>
-                                        <div className="text-xs text-gray-500">Mail Us On</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 rounded-full bg-red-600 text-white">
-                                        <Phone className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-semibold">+92 324 8881119</div>
-                                        <div className="text-xs text-gray-500">Make a Call</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 rounded-full bg-red-600 text-white">
-                                        <MapPin className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-semibold">
-                                            551, Sector 7-A, Korangi Industrial Area, Karachi
-                                        </div>
-                                        <div className="text-xs text-gray-500">Location</div>
-                                    </div>
-                                </div>
+                                <ContactInfo
+                                    icon={<Mail className="w-5 h-5" />}
+                                    title="info@noorsonss.com"
+                                    subtitle="Mail Us On"
+                                />
+                                <ContactInfo
+                                    icon={<Phone className="w-5 h-5" />}
+                                    title="+92 324 8881119"
+                                    subtitle="Make a Call"
+                                />
+                                <ContactInfo
+                                    icon={<MapPin className="w-5 h-5" />}
+                                    title="551, Sector 7-A, Korangi Industrial Area, Karachi"
+                                    subtitle="Location"
+                                />
                             </div>
 
                             {/* Socials */}
@@ -170,8 +208,6 @@ export default function ContactPage(): React.ReactElement {
                                     ))}
                                 </div>
                             </div>
-
-                            
                         </aside>
 
                         {/* RIGHT SIDE - FORM */}
@@ -183,7 +219,7 @@ export default function ContactPage(): React.ReactElement {
                                     <InputField
                                         label="First Name *"
                                         name="firstName"
-                                        value={form.firstName}
+                                        value={formData.firstName}
                                         error={errors.firstName}
                                         onChange={handleChange}
                                         placeholder="Enter Your First Name"
@@ -191,7 +227,7 @@ export default function ContactPage(): React.ReactElement {
                                     <InputField
                                         label="Last Name *"
                                         name="lastName"
-                                        value={form.lastName}
+                                        value={formData.lastName}
                                         error={errors.lastName}
                                         onChange={handleChange}
                                         placeholder="Enter Your Last Name"
@@ -202,7 +238,7 @@ export default function ContactPage(): React.ReactElement {
                                     <InputField
                                         label="Phone Number *"
                                         name="phone"
-                                        value={form.phone}
+                                        value={formData.phone}
                                         error={errors.phone}
                                         onChange={handleChange}
                                         placeholder="Phone Number"
@@ -210,7 +246,7 @@ export default function ContactPage(): React.ReactElement {
                                     <InputField
                                         label="Email *"
                                         name="email"
-                                        value={form.email}
+                                        value={formData.email}
                                         error={errors.email}
                                         onChange={handleChange}
                                         placeholder="Email Address"
@@ -221,7 +257,7 @@ export default function ContactPage(): React.ReactElement {
                                     <InputField
                                         label="Subject *"
                                         name="subject"
-                                        value={form.subject}
+                                        value={formData.subject}
                                         error={errors.subject}
                                         onChange={handleChange}
                                         placeholder="General Inquiry, Partnership, etc"
@@ -229,10 +265,11 @@ export default function ContactPage(): React.ReactElement {
                                     <InputField
                                         label="(optional) Order/Ref No."
                                         name="order"
-                                        value=""
-                                        onChange={() => { }}
+                                        value={formData.order}
+                                        onChange={handleChange}
                                         placeholder="Order reference (optional)"
                                     />
+
                                 </div>
 
                                 <div>
@@ -240,7 +277,7 @@ export default function ContactPage(): React.ReactElement {
                                         Message *
                                         <textarea
                                             name="message"
-                                            value={form.message}
+                                            value={formData.message}
                                             onChange={handleChange}
                                             rows={6}
                                             placeholder="Write your message"
@@ -260,10 +297,10 @@ export default function ContactPage(): React.ReactElement {
                                 <div className="flex items-center gap-4 pt-2">
                                     <button
                                         type="submit"
-                                        disabled={submitting}
-                                        className="inline-flex items-center justify-center rounded-full bg-black text-white px-6 py-3 text-sm font-semibold hover:opacity-95 disabled:opacity-60"
+                                        disabled={isSubmitting}
+                                        className="w-full bg-black text-white py-2 rounded-md hover:opacity-90 transition disabled:opacity-60"
                                     >
-                                        {submitting ? "Sending..." : "Send Message"}
+                                        {isSubmitting ? "Sending..." : "Send Message"}
                                     </button>
 
                                     <Link
@@ -275,11 +312,7 @@ export default function ContactPage(): React.ReactElement {
                                     </Link>
                                 </div>
 
-                                {success && (
-                                    <div className="mt-4 rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
-                                        {success}
-                                    </div>
-                                )}
+                                
                             </form>
                         </div>
                     </div>
@@ -289,7 +322,7 @@ export default function ContactPage(): React.ReactElement {
     );
 }
 
-// ✅ Small reusable input field component
+// ✅ Input Field Component
 interface InputProps {
     label: string;
     name: string;
@@ -322,5 +355,26 @@ function InputField({
             />
             {error && <p className="text-rose-600 text-xs mt-1">{error}</p>}
         </label>
+    );
+}
+
+// ✅ Contact Info Component
+function ContactInfo({
+    icon,
+    title,
+    subtitle,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+}) {
+    return (
+        <div className="flex items-start gap-4">
+            <div className="p-3 rounded-full bg-red-600 text-white">{icon}</div>
+            <div>
+                <div className="text-sm font-semibold">{title}</div>
+                <div className="text-xs text-gray-500">{subtitle}</div>
+            </div>
+        </div>
     );
 }
