@@ -13,7 +13,7 @@ export const heroSlides: HeroSlide[] = [
         id: '2',
         title: 'Safety Solutions for a Better Tomorrow',
         subtitle: 'Your investment in safety matters',
-        image: 'hero2'
+        image: '1Generalpurpose'
     },
     {
         id: '3',
