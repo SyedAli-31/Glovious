@@ -23,7 +23,7 @@ const slides: Slide[] = [
         id: 2,
         title: "Safety Solutions for a Better Tomorrow",
         subtitle: "Your investment in safety matters",
-        image: "/hero2.png",
+        image: "/1Genealpurpose.png",
     },
     {
         id: 3,
